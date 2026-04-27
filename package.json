@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw/graph-engine",
+  "name": "@gottwik/graphait",
   "version": "1.0.0",
   "private": true,
   "description": "Graph navigation engine and shared types for quiz apps",
