@@ -1,29 +1,29 @@
-# @gottwik/graphait
+# Graphait — Graph-assisted AI
 
-The engine behind graph-driven quiz flows. Define your questions and branching logic as a graph — graphait handles traversal, port normalization, and shared types so you don't have to.
+AI is powerful. But it doesn't know your business, your customers, or the hard-won knowledge your team has built over years. Graphait bridges that gap.
 
----
-
-## Why
-
-Building a quiz where the next question depends on the previous answer means managing branching logic somewhere. Hardcoding it gets messy fast. Graphait lets you model that logic as a simple JSON graph — nodes are questions, edges are the paths between them. You design the flow visually (with [graphait-ui](https://github.com/Gottwik/graphait-ui)), export the JSON, and use this library to walk through it at runtime.
+It lets you map out your decision logic as a visual graph — the questions to ask, the paths to take, the outcomes to reach — and then feed that structure directly into an AI conversation. The result is an AI that reasons the way *you* would, not just the way a language model was trained to.
 
 ---
 
-## How it works
+## The idea
 
-A graph has **nodes** (questions, a start, and end states) connected by **edges** (the paths between them). Each question node has **output ports** — one per possible answer — and edges connect those ports to the next node.
+Most AI tools treat your knowledge as something to be inferred. Graphait makes it explicit.
+
+You draw the flow. You decide what gets asked, in what order, and what each answer means. The AI follows your structure — and within that structure, it can still be smart, empathetic, and conversational. You get the best of both: human expertise guiding the process, AI handling the interaction.
 
 ```
-[start] ──► [Do you have kids?] ──yes──► [Do you want a yard?] ──► [end]
-                                   │
-                                  no
-                                   │
-                                   ▼
-                             [Do you like nightlife?] ──► [end]
+[start] ──► [What matters most to you?]
+                      │
+          ┌───────────┼───────────┐
+        schools    nightlife   nature
+          │           │           │
+          ▼           ▼           ▼
+      [question]  [question]  [question]
+                                  │
+                                  ▼
+                              [result]
 ```
-
-At runtime, you start at the entry node, show the question, get an answer, and follow the matching edge to the next node.
 
 ---
 
@@ -44,14 +44,14 @@ import {
   findNextNode,
 } from '@gottwik/graphait'
 
-// 1. Normalize your graph JSON on load (resolves legacy edge formats)
+// Load your graph (designed visually, exported as JSON)
 const graph = normalizeGraphPorts(rawGraph)
 
-// 2. Find where to start
+// Start at the beginning
 let current = findEntryNode(graph)
 
-// 3. After the user answers, follow the edge for that answer
-const nextId = findNextNode(graph, current.id, 'yes')
+// After each answer, follow the right path
+const nextId = findNextNode(graph, current.id, 'schools')
 ```
 
 ---
@@ -59,16 +59,16 @@ const nextId = findNextNode(graph, current.id, 'yes')
 ## API
 
 ### `normalizeGraphPorts(graph)`
-Call this once when you load your graph JSON. It ensures all edges reference ports by ID (rather than index), and fills in default Yes / No / Other ports for any question nodes that don't have custom ones.
+Prepares a graph for traversal. Call this once when you load your graph JSON.
 
 ### `findEntryNode(graph)`
-Returns the starting node — the `start` node if one exists, otherwise the first question with no incoming edges.
+Returns the first node — your conversation's starting point.
 
 ### `findNextNode(graph, nodeId, portId)`
-Given a current node and the port the user exited through, returns the ID of the next node (or `null` if there's no edge).
+Given where you are and what the user chose, returns where to go next.
 
 ### `slugify(label)`
-Converts a label like `"Yes / has kids"` to a stable port ID like `"yes_has_kids"`.
+Turns a label like `"Yes / has kids"` into a stable ID like `"yes_has_kids"`.
 
 ---
 
@@ -80,8 +80,8 @@ import type {
   GraphNode,
   GraphEdge,
   OutputPort,
-  NodeType,       // 'start' | 'question' | 'end' | 'comment'
-  QuestionType,   // 'text' | 'multi' | 'reorder'
+  NodeType,      // 'start' | 'question' | 'end' | 'comment'
+  QuestionType,  // 'text' | 'multi' | 'reorder'
 } from '@gottwik/graphait'
 ```
 
@@ -89,5 +89,5 @@ import type {
 
 ## Related
 
-- [graphait-ui](https://github.com/Gottwik/graphait-ui) — visual editor for building graphs
-- [quiz-ui](https://github.com/Gottwik/quiz-ui) — React components for rendering the quiz
+- [graphait-ui](https://github.com/Gottwik/graphait-ui) — the visual editor for building your graphs
+- [quiz-ui](https://github.com/Gottwik/quiz-ui) — React components for running graph-assisted AI conversations
