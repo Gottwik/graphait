@@ -1,17 +1,29 @@
 # @gottwik/graphait
 
-> Graph navigation engine and shared types for building node-based quiz flows.
+The engine behind graph-driven quiz flows. Define your questions and branching logic as a graph — graphait handles traversal, port normalization, and shared types so you don't have to.
+
+---
+
+## Why
+
+Building a quiz where the next question depends on the previous answer means managing branching logic somewhere. Hardcoding it gets messy fast. Graphait lets you model that logic as a simple JSON graph — nodes are questions, edges are the paths between them. You design the flow visually (with [graphait-ui](https://github.com/Gottwik/graphait-ui)), export the JSON, and use this library to walk through it at runtime.
+
+---
+
+## How it works
+
+A graph has **nodes** (questions, a start, and end states) connected by **edges** (the paths between them). Each question node has **output ports** — one per possible answer — and edges connect those ports to the next node.
 
 ```
-  [start] ──► [question] ──yes──► [question] ──► [end]
-                   │                    │
-                  no                  other
-                   │                    │
-                   ▼                    ▼
-              [question]             [end]
+[start] ──► [Do you have kids?] ──yes──► [Do you want a yard?] ──► [end]
+                                   │
+                                  no
+                                   │
+                                   ▼
+                             [Do you like nightlife?] ──► [end]
 ```
 
-Ships as ESM + CJS with full TypeScript types. Zero runtime dependencies.
+At runtime, you start at the entry node, show the question, get an answer, and follow the matching edge to the next node.
 
 ---
 
@@ -23,106 +35,7 @@ npm install github:Gottwik/graphait#v1.0.0
 
 ---
 
-## The Graph Model
-
-A graph is just nodes and edges:
-
-```ts
-interface GraphJSON {
-  nodes: GraphNode[]
-  edges: GraphEdge[]
-}
-```
-
-### Nodes
-
-```
-┌─────────────────────────────────────────────────────┐
-│  GraphNode                                          │
-├──────────────┬──────────────────────────────────────┤
-│  id          │  unique identifier                   │
-│  type        │  'start' | 'question' | 'end'        │
-│              │  | 'comment'                         │
-│  title       │  display label                       │
-│  qtype       │  'text' | 'reorder' | 'multi'        │
-│  options     │  choices (multi/reorder questions)   │
-│  outputPorts │  named exit ports                    │
-│  text        │  body copy / answer text             │
-│  note        │  internal editor note                │
-│  x, y        │  canvas position                     │
-└──────────────┴──────────────────────────────────────┘
-```
-
-### Edges
-
-```ts
-interface GraphEdge {
-  from: string       // source node id
-  fromPortId?: string  // which output port
-  fromAnswer?: number  // legacy index-based port ref
-  to: string         // destination node id
-}
-```
-
-### Output Ports
-
-Each question node has named output ports. If none are defined, they default to:
-
-| Port ID | Label          |
-|---------|----------------|
-| `yes`   | Yes            |
-| `no`    | No             |
-| `other` | Other / unclear |
-
----
-
-## API
-
-### `findEntryNode(graph)`
-
-Returns the entry point of the graph — the `start` node if one exists, otherwise the first question node with no incoming edges.
-
-```ts
-import { findEntryNode } from '@gottwik/graphait'
-
-const entry = findEntryNode(graph)
-// → GraphNode | null
-```
-
-### `findNextNode(graph, currentNodeId, portId)`
-
-Follows an edge from a given node via a specific output port.
-
-```ts
-import { findNextNode } from '@gottwik/graphait'
-
-const nextId = findNextNode(graph, 'node-1', 'yes')
-// → 'node-2' | null
-```
-
-### `normalizeGraphPorts(graph)`
-
-Ensures all edges use `fromPortId` (string) rather than the legacy `fromAnswer` (index). Also fills in default ports for any question nodes missing them. Run this once on load.
-
-```ts
-import { normalizeGraphPorts } from '@gottwik/graphait'
-
-const normalized = normalizeGraphPorts(rawGraph)
-```
-
-### `slugify(label)`
-
-Converts a port label to a stable slug for use as a port ID.
-
-```ts
-import { slugify } from '@gottwik/graphait'
-
-slugify('Yes / has kids') // → 'yes_has_kids'
-```
-
----
-
-## Usage Example
+## Usage
 
 ```ts
 import {
@@ -131,19 +44,35 @@ import {
   findNextNode,
 } from '@gottwik/graphait'
 
+// 1. Normalize your graph JSON on load (resolves legacy edge formats)
 const graph = normalizeGraphPorts(rawGraph)
 
+// 2. Find where to start
 let current = findEntryNode(graph)
 
-// user answers 'yes' on the first question
+// 3. After the user answers, follow the edge for that answer
 const nextId = findNextNode(graph, current.id, 'yes')
 ```
 
 ---
 
-## Types
+## API
 
-All types are exported from the root:
+### `normalizeGraphPorts(graph)`
+Call this once when you load your graph JSON. It ensures all edges reference ports by ID (rather than index), and fills in default Yes / No / Other ports for any question nodes that don't have custom ones.
+
+### `findEntryNode(graph)`
+Returns the starting node — the `start` node if one exists, otherwise the first question with no incoming edges.
+
+### `findNextNode(graph, nodeId, portId)`
+Given a current node and the port the user exited through, returns the ID of the next node (or `null` if there's no edge).
+
+### `slugify(label)`
+Converts a label like `"Yes / has kids"` to a stable port ID like `"yes_has_kids"`.
+
+---
+
+## Types
 
 ```ts
 import type {
@@ -151,33 +80,14 @@ import type {
   GraphNode,
   GraphEdge,
   OutputPort,
-  NodeType,
-  QuestionType,
-  NextQuestionResponse,
-  Recommendation,
-  QAPair,
+  NodeType,       // 'start' | 'question' | 'end' | 'comment'
+  QuestionType,   // 'text' | 'multi' | 'reorder'
 } from '@gottwik/graphait'
 ```
 
 ---
 
-## Build
-
-```bash
-npm run build   # outputs to dist/ via tsup
-```
-
-Exports:
-
-| Format | File               |
-|--------|--------------------|
-| ESM    | `dist/index.mjs`   |
-| CJS    | `dist/index.js`    |
-| Types  | `dist/index.d.ts`  |
-
----
-
 ## Related
 
-- [`@gottwik/graphait-ui`](https://github.com/Gottwik/graphait-ui) — visual graph editor and chat interface
-- [`@gottwik/quiz-ui`](https://github.com/Gottwik/quiz-ui) — quiz UI components powered by graphait
+- [graphait-ui](https://github.com/Gottwik/graphait-ui) — visual editor for building graphs
+- [quiz-ui](https://github.com/Gottwik/quiz-ui) — React components for rendering the quiz
