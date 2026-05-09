@@ -13,16 +13,16 @@ Most AI tools treat your knowledge as something to be inferred. Graphait makes i
 You draw the flow. You decide what gets asked, in what order, and what each answer means. The AI follows your structure — and within that structure, it can still be smart, empathetic, and conversational. You get the best of both: human expertise guiding the process, AI handling the interaction.
 
 ```
-[start] ──► [What matters most to you?]
-                      │
-          ┌───────────┼───────────┐
-        schools    nightlife   nature
-          │           │           │
-          ▼           ▼           ▼
-      [question]  [question]  [question]
-                                  │
-                                  ▼
-                              [result]
+[start] ──► [What is the nature of the issue?]
+                          │
+          ┌───────────────┼───────────────┐
+       hardware        software        access
+          │               │               │
+          ▼               ▼               ▼
+      [question]      [question]      [question]
+          │                               │
+          ▼                               ▼
+     [escalate]                    [self-service]
 ```
 
 ---
@@ -50,25 +50,9 @@ const graph = normalizeGraphPorts(rawGraph)
 // Start at the beginning
 let current = findEntryNode(graph)
 
-// After each answer, follow the right path
-const nextId = findNextNode(graph, current.id, 'schools')
+// After each response, follow the right path
+const nextId = findNextNode(graph, current.id, 'hardware')
 ```
-
----
-
-## API
-
-### `normalizeGraphPorts(graph)`
-Prepares a graph for traversal. Call this once when you load your graph JSON.
-
-### `findEntryNode(graph)`
-Returns the first node — your conversation's starting point.
-
-### `findNextNode(graph, nodeId, portId)`
-Given where you are and what the user chose, returns where to go next.
-
-### `slugify(label)`
-Turns a label like `"Yes / has kids"` into a stable ID like `"yes_has_kids"`.
 
 ---
 
@@ -87,7 +71,8 @@ import type {
 
 ---
 
-## Related
+## Graphait UI
 
-- [graphait-ui](https://github.com/Gottwik/graphait-ui) — the visual editor for building your graphs
-- [quiz-ui](https://github.com/Gottwik/quiz-ui) — React components for running graph-assisted AI conversations
+[graphait-ui](https://github.com/Gottwik/graphait-ui) is the visual editor for building your graphs. Instead of writing JSON by hand, you drag and drop nodes onto a canvas, connect them with edges, and configure each step — then export the graph as JSON for use at runtime.
+
+It's designed to be embedded into your own admin interface, so non-technical team members can own and update the decision logic without touching code.
