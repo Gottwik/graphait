@@ -36,8 +36,8 @@ export type QuestionType = 'text' | 'reorder' | 'multi'
 
 export interface GraphNode {
   id: string
-  x: number
-  y: number
+  x?: number
+  y?: number
   title: string
   type: NodeType
   qtype?: QuestionType
@@ -46,6 +46,7 @@ export interface GraphNode {
   duration?: number
   options?: string[]
   outputPorts?: OutputPort[]
+  meta?: Record<string, unknown>
 }
 
 export interface GraphEdge {
