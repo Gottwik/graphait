@@ -23,7 +23,8 @@ __export(index_exports, {
   findEntryNode: () => findEntryNode,
   findNextNode: () => findNextNode,
   normalizeGraphPorts: () => normalizeGraphPorts,
-  slugify: () => slugify
+  slugify: () => slugify,
+  suggestedOrder: () => suggestedOrder
 });
 module.exports = __toCommonJS(index_exports);
 
@@ -68,11 +69,61 @@ function findNextNode(graph, currentNodeId, portId) {
   );
   return edge?.to ?? null;
 }
+function suggestedOrder(graph) {
+  const nodes = Array.isArray(graph?.nodes) ? graph.nodes : [];
+  const edges = Array.isArray(graph?.edges) ? graph.edges : [];
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const start = nodes.find((n) => n.type === "start") ?? null;
+  if (!start) return { start: null, topics: [], problems: ["the graph has no start node"] };
+  const firstExit = (node) => {
+    const out = edges.filter((e) => e.from === node.id);
+    const portId = node.outputPorts?.[0]?.id;
+    const edge = portId !== void 0 && out.find((e) => e.fromPortId === portId) || out[0];
+    return edge ? edge.to : null;
+  };
+  const topics = [];
+  const problems = [];
+  const seen = /* @__PURE__ */ new Set([start.id]);
+  let reachedEnd = false;
+  let current = start;
+  for (; ; ) {
+    const toId = firstExit(current);
+    if (toId === null) {
+      problems.push(`node ${current.id} has no way out`);
+      break;
+    }
+    const next = byId.get(toId);
+    if (!next) {
+      problems.push("the path from start never reaches an end node");
+      break;
+    }
+    if (seen.has(next.id)) {
+      problems.push(`the path loops back to ${next.id}`);
+      break;
+    }
+    seen.add(next.id);
+    if (next.type === "end") {
+      reachedEnd = true;
+      break;
+    }
+    if (next.type === "question") topics.push(next);
+    current = next;
+  }
+  if (reachedEnd) {
+    for (const n of nodes) {
+      if (n.type === "question" && !seen.has(n.id)) {
+        problems.push(`node ${n.id} is not on the path from start to end`);
+      }
+    }
+  }
+  return { start, topics, problems };
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   findEntryNode,
   findNextNode,
   normalizeGraphPorts,
-  slugify
+  slugify,
+  suggestedOrder
 });
 //# sourceMappingURL=index.js.map

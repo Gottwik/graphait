@@ -46,6 +46,10 @@ export interface GraphNode {
   duration?: number
   options?: string[]
   outputPorts?: OutputPort[]
+  /** What this question is meant to find out about. */
+  markers?: string[]
+  /** A label for a run of questions that belong together. */
+  group?: string
   meta?: Record<string, unknown>
 }
 

@@ -30,7 +30,7 @@ You draw the flow. You decide what gets asked, in what order, and what each answ
 ## Install
 
 ```bash
-npm install github:Gottwik/graphait#v1.0.0
+npm install github:Gottwik/graphait#v1.1.0
 ```
 
 ---
@@ -68,6 +68,24 @@ import type {
   QuestionType,  // 'text' | 'multi' | 'reorder'
 } from '@gottwik/graphait'
 ```
+
+### Markers, groups and the suggested order
+
+A node can carry `markers?: string[]` (what the question is meant to find out)
+and `group?: string` (a label for questions that belong together).
+
+```ts
+import { suggestedOrder } from '@gottwik/graphait'
+
+const { start, topics, problems } = suggestedOrder(graph)
+```
+
+`topics` are the `question` nodes from the start node to the first `end` node,
+always following a node's first exit (the edge from its first output port, else
+its first edge). Comment nodes are walked through and left out. `problems` is a
+list of plain sentences (no start node, a loop, a node with no way out, an end
+never reached, a question off the path); it is empty when the graph is sound.
+It never throws.
 
 ---
 
